@@ -1,0 +1,4 @@
+Partner Name,Nick Name,Contact Person 1,Phone No 1,Contact Person 2,Phone No 2,Email,Password,Address,Account Holder Name,Account Number,Bank Name,IFSC Code,PAN,Remarks,Payment Terms
+ABC Enterprises,ABC,John Doe,9876543210,Jane Smith,9876543211,abc@example.com,password123,"123 Main St, Mumbai, Maharashtra 400001",John Doe,1234567890,State Bank of India,SBIN0001234,ABCDE1234F,Preferred partner,Net 30 days
+XYZ Solutions,XYZ,Mike Johnson,9876543212,,,,xyz@example.com,password456,"456 Park Ave, Delhi, Delhi 110001",Mike Johnson,9876543210,HDFC Bank,HDFC0002345,XYZAB5678C,New partner,Net 45 days
+Tech Innovations,TechInn,Sarah Williams,9876543213,Tom Brown,9876543214,tech@example.com,password789,"789 Tech Park, Bangalore, Karnataka 560001",Sarah Williams,1122334455,ICICI Bank,ICIC0003456,TECHN9012D,Premium partner,Net 15 days

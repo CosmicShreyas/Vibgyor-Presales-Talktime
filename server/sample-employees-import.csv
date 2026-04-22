@@ -1,0 +1,5 @@
+employeeId,name,email,password,role
+VIB_004,Jane Sales,jane.sales@example.com,password123,sales
+VIB_005,Bob Sales,bob.sales@example.com,password123,sales
+ADMIN_002,Alice Admin,alice.admin@example.com,password123,admin
+VIB_006,Mike Sales,mike.sales@example.com,password123,sales

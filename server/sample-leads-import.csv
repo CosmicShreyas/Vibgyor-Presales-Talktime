@@ -1,0 +1,4 @@
+name,phone,email,company,assignedTo,status,priority,notes,budget,city,source
+John Doe,1234567890,john@example.com,Acme Corp,john@talktime.com,pending,high,Interested in product demo,50000,Bangalore,Website
+Jane Smith,0987654321,jane@example.com,Tech Solutions,john@talktime.com,contacted,medium,Follow up next week,75000,Mumbai,Referral
+Bob Johnson,5551234567,bob@example.com,Global Industries,john@talktime.com,pending,low,Initial contact made,25000,Delhi,Cold Call
