@@ -1,0 +1,149 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --radius: 0.75rem;
+  --background: oklch(0.985 0.005 250);
+  --foreground: oklch(0.18 0.04 260);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.04 260);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.04 260);
+  --primary: oklch(0.55 0.22 260);
+  --primary-foreground: oklch(0.99 0.005 250);
+  --secondary: oklch(0.96 0.01 255);
+  --secondary-foreground: oklch(0.25 0.04 260);
+  --muted: oklch(0.96 0.01 255);
+  --muted-foreground: oklch(0.5 0.03 258);
+  --accent: oklch(0.94 0.04 255);
+  --accent-foreground: oklch(0.25 0.08 260);
+  --destructive: oklch(0.6 0.22 25);
+  --destructive-foreground: oklch(0.99 0.005 250);
+  --border: oklch(0.92 0.012 255);
+  --input: oklch(0.92 0.012 255);
+  --ring: oklch(0.55 0.22 260);
+  --stat-card: oklch(0.95 0.035 255);
+  --stat-card-foreground: oklch(0.2 0.05 260);
+  --gradient-hero: linear-gradient(110deg, oklch(0.32 0.12 255), oklch(0.5 0.2 258) 60%, oklch(0.6 0.22 255));
+  --shadow-card: 0 1px 2px oklch(0.2 0.04 260 / 0.04), 0 4px 16px oklch(0.2 0.04 260 / 0.04);
+  --sidebar: oklch(0.984 0.003 247.858);
+  --sidebar-foreground: oklch(0.129 0.042 264.695);
+  --sidebar-primary: oklch(0.208 0.042 265.755);
+  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-accent: oklch(0.968 0.007 247.896);
+  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
+  --sidebar-border: oklch(0.929 0.013 255.508);
+  --sidebar-ring: oklch(0.704 0.04 256.788);
+}
+
+.dark {
+  --background: oklch(0.16 0.025 260);
+  --foreground: oklch(0.97 0.005 250);
+  --card: oklch(0.21 0.03 260);
+  --card-foreground: oklch(0.97 0.005 250);
+  --popover: oklch(0.21 0.03 260);
+  --popover-foreground: oklch(0.97 0.005 250);
+  --primary: oklch(0.7 0.2 258);
+  --primary-foreground: oklch(0.16 0.04 260);
+  --secondary: oklch(0.26 0.035 260);
+  --secondary-foreground: oklch(0.97 0.005 250);
+  --muted: oklch(0.26 0.035 260);
+  --muted-foreground: oklch(0.7 0.03 258);
+  --accent: oklch(0.3 0.06 260);
+  --accent-foreground: oklch(0.97 0.005 250);
+  --destructive: oklch(0.65 0.22 22);
+  --destructive-foreground: oklch(0.99 0.005 250);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.7 0.2 258);
+  --stat-card: oklch(0.25 0.05 260);
+  --stat-card-foreground: oklch(0.97 0.005 250);
+  --gradient-hero: linear-gradient(110deg, oklch(0.25 0.1 255), oklch(0.4 0.18 258) 60%, oklch(0.55 0.22 255));
+  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.3), 0 4px 16px oklch(0 0 0 / 0.25);
+  --sidebar: oklch(0.208 0.042 265.755);
+  --sidebar-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-accent: oklch(0.279 0.041 260.031);
+  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.551 0.027 264.364);
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .pipeline-horizontal-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: 100%;
+    overflow-x: scroll;
+    overflow-y: hidden;
+    padding-bottom: 2.5rem;
+    scrollbar-gutter: stable;
+    scrollbar-width: auto;
+    scrollbar-color: var(--destructive) var(--muted);
+  }
+
+  .pipeline-horizontal-scroll::-webkit-scrollbar {
+    height: 16px;
+  }
+
+  .pipeline-horizontal-scroll::-webkit-scrollbar-track {
+    border-radius: 9999px;
+    background: var(--muted);
+  }
+
+  .pipeline-horizontal-scroll::-webkit-scrollbar-thumb {
+    min-width: 4rem;
+    border: 3px solid var(--muted);
+    border-radius: 9999px;
+    background: var(--destructive);
+    background-clip: padding-box;
+    transition: background-color 150ms ease;
+  }
+
+  .pipeline-horizontal-scroll::-webkit-scrollbar-thumb:hover,
+  .pipeline-horizontal-scroll::-webkit-scrollbar-thumb:active {
+    background: color-mix(in oklch, var(--destructive) 85%, white);
+    background-clip: padding-box;
+  }
+
+  .pipeline-board-track {
+    display: flex;
+    width: max-content;
+    height: 100%;
+    align-items: stretch;
+    gap: 1rem;
+    padding-right: 0.25rem;
+  }
+
+  .pipeline-column {
+    display: flex;
+    width: 18rem;
+    flex-shrink: 0;
+    height: 100%;
+    min-height: 0;
+    flex-direction: column;
+  }
+
+  .pipeline-column-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+}

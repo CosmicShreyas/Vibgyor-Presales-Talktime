@@ -1,0 +1,62 @@
+<div class="flex flex-1 flex-col gap-6">
+  <div class="flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <p class="text-sm text-muted-foreground">Partner performance</p>
+      <h1 class="mt-1 text-3xl font-extrabold tracking-tight">Welcome</h1>
+      <p class="mt-2 max-w-xl text-sm text-muted-foreground">
+        A quick summary of your lead flow, follow-ups, and project pipeline for this week.
+      </p>
+    </div>
+    <a
+      routerLink="/leads"
+      class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:opacity-95"
+    >
+      <app-stat-icon name="arrow-up-right" />
+      View all leads
+    </a>
+  </div>
+
+  <div
+    class="flex flex-wrap items-center justify-between gap-4 rounded-2xl p-6 text-white shadow-card"
+    [style.background-image]="'var(--gradient-hero)'"
+  >
+    <div>
+      <h2 class="text-2xl font-bold">{{ partnerName ?? auth.brandPartner()?.name ?? '—' }}</h2>
+      <p class="mt-1 text-sm text-white/80">Brand Partner | 24 Aug 2023</p>
+    </div>
+    <div class="flex rounded-full bg-white/15 p-1 backdrop-blur">
+      @for (item of ranges; track item.period) {
+        <button
+          type="button"
+          (click)="setRange(item)"
+          class="rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
+          [ngClass]="{
+            'bg-white text-primary': range.period === item.period,
+            'text-white/90 hover:text-white': range.period !== item.period
+          }"
+        >
+          {{ item.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (loading) {
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      @for (item of [0, 1, 2, 3, 4, 5, 6]; track item) {
+        <div class="h-36 animate-pulse rounded-2xl bg-muted"></div>
+      }
+    </div>
+  } @else {
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      @for (card of cards; track card.label) {
+        <app-stat-card
+          [label]="card.label"
+          [value]="card.value"
+          [description]="card.description"
+          [icon]="card.icon"
+        />
+      }
+    </div>
+  }
+</div>

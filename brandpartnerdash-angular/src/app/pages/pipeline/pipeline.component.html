@@ -1,0 +1,50 @@
+<div class="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden">
+  <div class="shrink-0">
+    <h1 class="text-3xl font-extrabold tracking-tight">Pipeline</h1>
+    <p class="mt-1 text-sm text-muted-foreground">
+      {{ loading ? 'Loading…' : grandTotal + ' active deals across ' + columns.length + ' stages' }}
+    </p>
+  </div>
+
+  <div class="pipeline-horizontal-scroll min-h-0 flex-1">
+    <div class="pipeline-board-track">
+      @for (column of columns; track column.key) {
+        <div class="pipeline-column rounded-2xl border border-border bg-card p-3 shadow-card">
+          <div class="mb-3 flex shrink-0 items-center justify-between px-1">
+            <span class="rounded-full px-2 py-0.5 text-xs font-medium" [ngClass]="column.tint">{{ column.title }}</span>
+            <span class="text-xs text-muted-foreground">{{ column.deals.length }}</span>
+          </div>
+
+          <div class="pipeline-column-body flex flex-col gap-2">
+            @for (deal of column.deals; track deal.id) {
+              <div class="cursor-pointer rounded-xl border border-border bg-background p-3 transition-shadow hover:shadow-card">
+                <div>
+                  <div class="text-sm font-semibold text-foreground">{{ deal.name }}</div>
+                  <div class="mt-0.5 text-xs text-muted-foreground">{{ deal.id }}</div>
+                  @if (deal.project) {
+                    <div class="mt-0.5 truncate text-xs text-muted-foreground">{{ deal.project }}</div>
+                  }
+                </div>
+                <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  @if (deal.budget) {
+                    <span>{{ formatBudget(deal.budget) }}</span>
+                  }
+                  @if (deal.city) {
+                    <span>{{ deal.city }}</span>
+                  }
+                  <span>{{ deal.date }}</span>
+                </div>
+              </div>
+            }
+
+            @if (!loading && column.deals.length === 0) {
+              <div class="rounded-xl border border-dashed border-border p-6 text-center text-xs text-muted-foreground">
+                No deals
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

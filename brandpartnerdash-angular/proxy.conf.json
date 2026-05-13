@@ -1,0 +1,7 @@
+{
+  "/api": {
+    "target": "https://vi-presalesapi.boltapp.in",
+    "secure": true,
+    "changeOrigin": true
+  }
+}

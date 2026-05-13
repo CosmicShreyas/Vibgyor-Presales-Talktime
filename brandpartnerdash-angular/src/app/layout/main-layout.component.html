@@ -1,0 +1,62 @@
+<div class="flex min-h-screen bg-background text-foreground">
+  <aside class="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar p-4 md:flex">
+    <div class="mb-6 flex items-center gap-3 px-1">
+      <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground shadow-md">
+        BP
+      </div>
+      <span class="text-base font-semibold text-sidebar-foreground">Brand Partner</span>
+    </div>
+
+    <p class="mb-2 px-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Overview</p>
+    <nav class="flex flex-col gap-1">
+      @for (link of overviewLinks; track link.path) {
+        <a
+          [routerLink]="link.path"
+          routerLinkActive="bg-primary text-primary-foreground shadow-sm"
+          [routerLinkActiveOptions]="{ exact: link.path === '/' }"
+          class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        >
+          <app-sidebar-icon [name]="link.icon" />
+          {{ link.label }}
+        </a>
+      }
+    </nav>
+
+    <p class="mb-2 mt-6 px-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Account</p>
+    <nav class="flex flex-col gap-1">
+      @for (link of accountLinks; track link.path) {
+        <a
+          [routerLink]="link.path"
+          routerLinkActive="bg-primary text-primary-foreground shadow-sm"
+          class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        >
+          <app-sidebar-icon [name]="link.icon" />
+          {{ link.label }}
+        </a>
+      }
+      <button
+        type="button"
+        (click)="logout()"
+        class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
+      >
+        <app-sidebar-icon name="logout" />
+        Log out
+      </button>
+    </nav>
+  </aside>
+
+  <div class="flex min-h-0 min-w-0 flex-1 flex-col">
+    <header class="sticky top-0 z-10 flex items-center justify-end gap-3 border-b border-border bg-background/60 px-6 py-3 backdrop-blur">
+      <button
+        type="button"
+        (click)="toggleTheme()"
+        class="rounded-lg border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+      >
+        {{ isDark ? 'Light mode' : 'Dark mode' }}
+      </button>
+    </header>
+    <main class="flex min-h-0 flex-1 flex-col p-6 md:p-8">
+      <router-outlet />
+    </main>
+  </div>
+</div>

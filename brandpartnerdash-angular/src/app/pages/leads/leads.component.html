@@ -1,0 +1,484 @@
+<div class="flex flex-1 flex-col gap-6">
+  <div class="flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-extrabold tracking-tight">Leads</h1>
+      <p class="mt-1 text-sm text-muted-foreground">
+        {{ rows.length }} total leads · {{ yetToContactCount }} need first contact
+      </p>
+    </div>
+
+    <div #newLeadMenuRoot class="relative">
+      <button
+        type="button"
+        class="inline-flex cursor-pointer items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm"
+        (click)="toggleNewLeadMenu($event)"
+      >
+        <app-leads-icon name="plus" />
+        New lead
+      </button>
+      @if (newLeadMenuOpen) {
+        <div
+          class="absolute right-0 z-30 mt-2 min-w-[12rem] overflow-hidden rounded-lg border border-border bg-card p-1 shadow-card"
+          (click)="$event.stopPropagation()"
+        >
+          <button
+            type="button"
+            class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-foreground hover:bg-accent"
+            (click)="openAddDialog()"
+          >
+            <app-leads-icon name="pencil" />
+            Enter manually
+          </button>
+          <button
+            type="button"
+            class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-foreground hover:bg-accent"
+            (click)="openCsvDialog()"
+          >
+            <app-leads-icon name="upload" />
+            Import CSV
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="flex flex-wrap items-center gap-3">
+    <div class="relative min-w-[240px] flex-1">
+      <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+        <app-leads-icon name="search" />
+      </span>
+      <input
+        [(ngModel)]="query"
+        placeholder="Search by name, city, project…"
+        class="w-full rounded-md border border-input bg-background py-2 pl-9 pr-3 text-sm transition-shadow focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+      />
+    </div>
+
+    <div #filterMenuRoot class="relative shrink-0">
+      <button
+        type="button"
+        class="inline-flex items-center gap-2 rounded-md border border-border bg-background px-4 py-2 text-sm"
+        [class.border-primary]="appliedFrom || appliedTo"
+        [class.text-primary]="appliedFrom || appliedTo"
+        (click)="toggleFilterMenu($event)"
+      >
+        <app-leads-icon name="filter" />
+        Filters{{ appliedFrom || appliedTo ? ' •' : '' }}
+      </button>
+      @if (filterOpen) {
+        <div
+          class="absolute right-0 z-30 mt-2 w-64 rounded-xl border border-border bg-card p-5 shadow-card"
+          (click)="$event.stopPropagation()"
+        >
+          <p class="mb-4 text-sm font-semibold text-foreground">Filter by date</p>
+          <div class="flex flex-col gap-3">
+            <div>
+              <label class="text-xs font-medium text-muted-foreground">From</label>
+              <input type="date" [(ngModel)]="filterFrom" class="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label class="text-xs font-medium text-muted-foreground">To</label>
+              <input type="date" [(ngModel)]="filterTo" class="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+            </div>
+          </div>
+          <div class="mt-5 flex flex-col gap-2">
+            <button
+              type="button"
+              class="w-full rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground disabled:opacity-50"
+              [disabled]="!filterFrom || !filterTo"
+              (click)="applyDateFilter()"
+            >
+              Submit
+            </button>
+            <button type="button" class="w-full rounded-md border border-border px-3 py-2 text-sm" (click)="clearDateFilter()">
+              Clear
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="flex flex-wrap gap-2">
+    @for (filter of filters; track filter) {
+      <button
+        type="button"
+        (click)="active = filter"
+        class="rounded-full border px-3 py-1.5 text-xs font-medium transition-colors"
+        [class.border-primary]="active === filter"
+        [class.bg-primary]="active === filter"
+        [class.text-primary-foreground]="active === filter"
+        [class.border-border]="active !== filter"
+        [class.bg-card]="active !== filter"
+        [class.text-muted-foreground]="active !== filter"
+        [class.hover:text-foreground]="active !== filter"
+      >
+        {{ filter }}
+      </button>
+    }
+  </div>
+
+  @if (fetchError) {
+    <div class="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">{{ fetchError }}</div>
+  }
+
+  <div class="overflow-x-auto rounded-2xl border border-border bg-card shadow-card">
+    <table class="min-w-full text-sm">
+      <thead class="border-b border-border text-left text-muted-foreground">
+        <tr>
+          <th class="px-4 py-3">Lead</th>
+          <th class="px-4 py-3">Project</th>
+          <th class="px-4 py-3">Budget</th>
+          <th class="px-4 py-3">Priority</th>
+          <th class="px-4 py-3">Status</th>
+          <th class="px-4 py-3">Created</th>
+          <th class="px-4 py-3 text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading) {
+          <tr><td colspan="7" class="px-4 py-12 text-center text-muted-foreground">Loading leads…</td></tr>
+        } @else {
+          @for (lead of filtered; track lead.id) {
+            <tr class="border-b border-border/60">
+              <td class="px-4 py-3">
+                <div class="font-medium text-foreground">{{ lead.name }}</div>
+                <div class="text-xs text-muted-foreground">{{ lead.id }} · {{ lead.city }}, {{ lead.state }}</div>
+              </td>
+              <td class="px-4 py-3">{{ lead.project }}</td>
+              <td class="px-4 py-3 font-medium">{{ formatBudget(lead.budget) }}</td>
+              <td class="px-4 py-3">
+                <span class="rounded-full px-2 py-0.5 text-xs font-medium" [class]="priorityStyles[lead.priority]">{{ lead.priority }}</span>
+              </td>
+              <td class="px-4 py-3">
+                <span class="rounded-full px-2 py-0.5 text-xs font-medium" [class]="statusStyles[lead.status]">{{ lead.status }}</span>
+              </td>
+              <td class="px-4 py-3 text-muted-foreground">{{ lead.createdAt }}</td>
+              <td class="px-4 py-3 text-right">
+                <button type="button" class="mr-2 text-sm text-primary" (click)="viewLead = lead">View</button>
+                <button type="button" class="mr-2 text-sm text-primary" (click)="openEdit(lead)">Edit</button>
+                <button type="button" class="text-sm text-destructive" (click)="deleteId = lead.id">Delete</button>
+              </td>
+            </tr>
+          }
+          @if (filtered.length === 0) {
+            <tr><td colspan="7" class="px-4 py-12 text-center text-muted-foreground">No leads match your filters.</td></tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@if (dialogOpen) {
+  <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" (click)="closeImportDialog()">
+    <div
+      class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-card"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="import-csv-title"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 id="import-csv-title" class="text-lg font-semibold">Import leads from CSV</h2>
+          <p class="mt-1 text-xs text-muted-foreground">
+            Expected columns:
+            <code class="font-mono">name, phone, altPhone, project, address, city, state, budget, priority, remarks</code>
+          </p>
+        </div>
+        <button type="button" class="text-muted-foreground hover:text-foreground" (click)="closeImportDialog()" aria-label="Close">
+          <app-leads-icon name="x" />
+        </button>
+      </div>
+
+      <div
+        class="mt-4 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-muted/40 px-6 py-10 text-center transition-colors hover:border-primary hover:bg-accent/40"
+        (drop)="onDrop($event)"
+        (dragover)="$event.preventDefault()"
+        (click)="triggerCsvBrowse()"
+      >
+        <span class="text-muted-foreground">
+          <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" x2="12" y1="3" y2="15" />
+          </svg>
+        </span>
+        <p class="text-sm font-medium text-foreground">Drop CSV files here or click to browse</p>
+        <p class="text-xs text-muted-foreground">Only .csv files · multiple allowed</p>
+        <input #csvInput type="file" accept=".csv" multiple class="hidden" (change)="onFilesSelected($event)" />
+      </div>
+
+      @if (files.length) {
+        <ul class="mt-3 space-y-2">
+          @for (file of files; track file.name) {
+            <li class="flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2">
+              <span class="text-primary"><app-leads-icon name="file-text" /></span>
+              <span class="flex-1 truncate text-sm text-foreground">{{ file.name }}</span>
+              <span class="text-xs text-muted-foreground">{{ (file.size / 1024).toFixed(1) }} KB</span>
+              <button type="button" class="text-muted-foreground hover:text-foreground" (click)="removeFile(file.name)" aria-label="Remove file">
+                <app-leads-icon name="x" />
+              </button>
+            </li>
+          }
+        </ul>
+      }
+
+      @if (importResult) {
+        <div
+          class="mt-3 rounded-lg border px-4 py-3 text-sm"
+          [ngClass]="
+            importResult.failed > 0
+              ? 'border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400'
+              : 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+          "
+        >
+          <p class="font-medium">
+            @if (importResult.success > 0) {
+              ✓ {{ importResult.success }} lead(s) imported successfully
+            }
+            @if (importResult.failed > 0) {
+              · {{ importResult.failed }} failed
+            }
+          </p>
+          @if (importResult.errors.length) {
+            <ul class="mt-2 space-y-1 text-xs">
+              @for (error of importResult.errors.slice(0, 5); track $index) {
+                <li>• {{ error }}</li>
+              }
+            </ul>
+          }
+        </div>
+      }
+
+      <div class="mt-4 flex justify-end gap-2">
+        <button type="button" class="rounded-md border border-border px-4 py-2 text-sm" (click)="closeImportDialog()">
+          {{ importResult ? 'Close' : 'Cancel' }}
+        </button>
+        @if (!importResult) {
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
+            [disabled]="!files.length || importing"
+            (click)="handleImport()"
+          >
+            <app-leads-icon name="upload" />
+            {{ importing ? 'Importing…' : files.length ? 'Import ' + files.length + (files.length > 1 ? ' files' : ' file') : 'Import' }}
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+@if (addOpen) {
+  <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" (click)="closeAddDialog()">
+    <div
+      class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-card scrollbar-hide"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-lead-title"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 id="add-lead-title" class="text-lg font-semibold">Add new lead</h2>
+          <p class="mt-1 text-sm text-muted-foreground">
+            Fields marked <span class="text-destructive">*</span> are required
+          </p>
+        </div>
+        <button type="button" class="text-muted-foreground hover:text-foreground" (click)="closeAddDialog()" aria-label="Close">
+          <app-leads-icon name="x" />
+        </button>
+      </div>
+
+      <div class="mt-4 grid grid-cols-2 gap-4">
+        <div class="col-span-2">
+          <label class="text-sm font-medium">Name <span class="text-destructive">*</span></label>
+          <input
+            [ngModel]="addDraft.name"
+            (ngModelChange)="patchAddDraft({ name: $event })"
+            maxlength="100"
+            class="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          @if (addErrors.name) { <p class="mt-1 text-xs text-destructive">{{ addErrors.name }}</p> }
+        </div>
+        <div>
+          <label class="text-sm font-medium">Phone <span class="text-destructive">*</span></label>
+          <input
+            [ngModel]="addDraft.phone"
+            (ngModelChange)="patchAddDraft({ phone: $event })"
+            maxlength="11"
+            class="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          @if (addErrors.phone) { <p class="mt-1 text-xs text-destructive">{{ addErrors.phone }}</p> }
+        </div>
+        <div>
+          <label class="text-sm font-medium">Alternate Phone</label>
+          <input
+            [ngModel]="addDraft.altPhone"
+            (ngModelChange)="patchAddDraft({ altPhone: $event })"
+            maxlength="11"
+            class="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          @if (addErrors.altPhone) { <p class="mt-1 text-xs text-destructive">{{ addErrors.altPhone }}</p> }
+        </div>
+        <div class="col-span-2">
+          <label class="text-sm font-medium">Email <span class="text-destructive">*</span></label>
+          <input
+            type="email"
+            [ngModel]="addDraft.email"
+            (ngModelChange)="patchAddDraft({ email: $event })"
+            class="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          @if (addErrors.email) { <p class="mt-1 text-xs text-destructive">{{ addErrors.email }}</p> }
+        </div>
+        <div class="col-span-2">
+          <label class="text-sm font-medium">Project <span class="text-destructive">*</span></label>
+          <input
+            [ngModel]="addDraft.project"
+            (ngModelChange)="patchAddDraft({ project: $event })"
+            maxlength="100"
+            class="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          <div class="mt-1 flex justify-between">
+            @if (addErrors.project) { <p class="text-xs text-destructive">{{ addErrors.project }}</p> } @else { <span></span> }
+            <span class="text-xs text-muted-foreground">{{ addDraft.project.length }}/100</span>
+          </div>
+        </div>
+        <div class="col-span-2">
+          <label class="text-sm font-medium">Address <span class="text-destructive">*</span></label>
+          <input
+            [ngModel]="addDraft.address"
+            (ngModelChange)="patchAddDraft({ address: $event })"
+            maxlength="200"
+            class="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          <div class="mt-1 flex justify-between">
+            @if (addErrors.address) { <p class="text-xs text-destructive">{{ addErrors.address }}</p> } @else { <span></span> }
+            <span class="text-xs text-muted-foreground">{{ addDraft.address.length }}/200</span>
+          </div>
+        </div>
+        <div>
+          <label class="text-sm font-medium">City <span class="text-destructive">*</span></label>
+          <input
+            [ngModel]="addDraft.city"
+            (ngModelChange)="patchAddDraft({ city: $event })"
+            maxlength="50"
+            class="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          @if (addErrors.city) { <p class="mt-1 text-xs text-destructive">{{ addErrors.city }}</p> }
+        </div>
+        <div>
+          <label class="text-sm font-medium">State <span class="text-destructive">*</span></label>
+          <input
+            [ngModel]="addDraft.state"
+            (ngModelChange)="patchAddDraft({ state: $event })"
+            maxlength="50"
+            class="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          @if (addErrors.state) { <p class="mt-1 text-xs text-destructive">{{ addErrors.state }}</p> }
+        </div>
+        <div>
+          <label class="text-sm font-medium">Budget (₹) <span class="text-destructive">*</span></label>
+          <input
+            [ngModel]="addDraft.budget"
+            (ngModelChange)="patchAddDraft({ budget: $event })"
+            maxlength="10"
+            placeholder="e.g. 500000"
+            class="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          @if (addErrors.budget) { <p class="mt-1 text-xs text-destructive">{{ addErrors.budget }}</p> }
+        </div>
+        <div>
+          <label class="text-sm font-medium">Priority</label>
+          <select
+            [ngModel]="addDraft.priority"
+            (ngModelChange)="patchAddDraft({ priority: $event })"
+            class="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            @for (priority of priorities; track priority) {
+              <option [value]="priority">{{ priority }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-span-2">
+          <label class="text-sm font-medium">Remarks</label>
+          <textarea
+            [ngModel]="addDraft.remarks"
+            (ngModelChange)="patchAddDraft({ remarks: $event })"
+            maxlength="500"
+            rows="3"
+            placeholder="Optional notes…"
+            class="mt-1.5 w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          ></textarea>
+          <div class="mt-1 text-right text-xs text-muted-foreground">{{ addDraft.remarks.length }}/500</div>
+        </div>
+      </div>
+
+      <div class="mt-4 flex justify-end gap-2">
+        <button type="button" class="rounded-md border border-border px-4 py-2 text-sm" (click)="closeAddDialog()">Cancel</button>
+        <button
+          type="button"
+          class="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
+          [disabled]="addSubmitting"
+          (click)="submitAdd()"
+        >
+          {{ addSubmitting ? 'Submitting…' : 'Add lead' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (viewLead) {
+  <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4">
+    <div class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-card">
+      <h2 class="text-lg font-semibold">{{ viewLead.name }}</h2>
+      <p class="text-sm text-muted-foreground">{{ viewLead.id }} · {{ viewLead.city }}, {{ viewLead.state }}</p>
+      <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
+        <div><dt class="text-xs text-muted-foreground">Phone</dt><dd>{{ viewLead.phone }}</dd></div>
+        <div><dt class="text-xs text-muted-foreground">Email</dt><dd>{{ viewLead.email }}</dd></div>
+        <div class="col-span-2"><dt class="text-xs text-muted-foreground">Project</dt><dd>{{ viewLead.project }}</dd></div>
+        <div><dt class="text-xs text-muted-foreground">Budget</dt><dd>{{ formatBudget(viewLead.budget) }}</dd></div>
+        <div><dt class="text-xs text-muted-foreground">Status</dt><dd>{{ viewLead.status }}</dd></div>
+      </dl>
+      <div class="mt-4 flex justify-end"><button type="button" class="rounded-md border border-border px-4 py-2 text-sm" (click)="viewLead = null">Close</button></div>
+    </div>
+  </div>
+}
+
+@if (editLead && editDraft) {
+  <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4">
+    <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-card scrollbar-hide">
+      <h2 class="text-lg font-semibold">Edit lead</h2>
+      <p class="text-sm text-muted-foreground">{{ editLead.id }}</p>
+      <div class="mt-4 grid grid-cols-2 gap-4">
+        <div class="col-span-2"><label class="text-sm">Name</label><input [(ngModel)]="editDraft.name" class="mt-1 w-full rounded-md border border-input px-3 py-2 text-sm" /></div>
+        <div><label class="text-sm">City</label><input [(ngModel)]="editDraft.city" class="mt-1 w-full rounded-md border border-input px-3 py-2 text-sm" /></div>
+        <div><label class="text-sm">State</label><input [(ngModel)]="editDraft.state" class="mt-1 w-full rounded-md border border-input px-3 py-2 text-sm" /></div>
+        <div class="col-span-2"><label class="text-sm">Project</label><input [(ngModel)]="editDraft.project" class="mt-1 w-full rounded-md border border-input px-3 py-2 text-sm" /></div>
+        <div><label class="text-sm">Budget</label><input [(ngModel)]="editDraft.budget" class="mt-1 w-full rounded-md border border-input px-3 py-2 text-sm" /></div>
+        <div class="col-span-2"><label class="text-sm">Remarks</label><textarea [(ngModel)]="editDraft.remarks" rows="3" class="mt-1 w-full rounded-md border border-input px-3 py-2 text-sm"></textarea></div>
+      </div>
+      <div class="mt-4 flex justify-end gap-2">
+        <button type="button" class="rounded-md border border-border px-4 py-2 text-sm" (click)="closeEdit()">Cancel</button>
+        <button type="button" class="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground" (click)="submitEdit()">Save changes</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (deleteId) {
+  <div class="fixed inset-0 z-40 flex items-center justify-center bg-black/50 p-4">
+    <div class="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-card">
+      <h2 class="text-lg font-semibold">Delete lead?</h2>
+      <p class="mt-2 text-sm text-muted-foreground">This action cannot be undone.</p>
+      <div class="mt-4 flex justify-end gap-2">
+        <button type="button" class="rounded-md border border-border px-4 py-2 text-sm" (click)="deleteId = null">Cancel</button>
+        <button type="button" class="rounded-md bg-destructive px-4 py-2 text-sm text-destructive-foreground" (click)="confirmDelete()">Delete</button>
+      </div>
+    </div>
+  </div>
+}

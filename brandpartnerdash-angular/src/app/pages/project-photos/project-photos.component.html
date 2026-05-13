@@ -1,0 +1,149 @@
+<div class="flex flex-1 flex-col gap-6">
+  <div class="flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-extrabold tracking-tight">Project Photos</h1>
+      <p class="mt-1 text-sm text-muted-foreground">
+        {{ loading ? 'Loading...' : uploadedImages.length + ' photos uploaded' }}
+      </p>
+    </div>
+    <button type="button" class="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground" (click)="open = true">
+      Upload photos
+    </button>
+  </div>
+
+  @if (open) {
+    <div class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" (click)="closeUploadDialog()">
+      <div
+        class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="upload-photo-title"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="flex items-start justify-between gap-4">
+          <h2 id="upload-photo-title" class="text-lg font-semibold">Upload Photo</h2>
+          <button
+            type="button"
+            class="text-muted-foreground transition-colors hover:text-foreground"
+            (click)="closeUploadDialog()"
+            aria-label="Close"
+          >
+            <app-leads-icon name="x" />
+          </button>
+        </div>
+
+        <div class="mt-4 space-y-4">
+          <div>
+            <label for="photo-title" class="text-sm font-medium">Title</label>
+            <input
+              id="photo-title"
+              [(ngModel)]="title"
+              placeholder="Enter photo title"
+              class="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+          <div>
+            <label for="photo-tags" class="text-sm font-medium">Tags</label>
+            <input
+              id="photo-tags"
+              [(ngModel)]="tags"
+              placeholder="Enter tags (comma separated)"
+              class="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+          <div>
+            <label for="photo-lead" class="text-sm font-medium">Select Lead</label>
+            <div class="relative mt-1.5">
+              <select
+                id="photo-lead"
+                [(ngModel)]="selectedLead"
+                class="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              >
+                <option value="">Choose a lead</option>
+                @for (lead of leads; track lead.uniqueId) {
+                  <option [value]="lead.uniqueId">{{ lead.name }} ({{ lead.status }})</option>
+                }
+              </select>
+              <svg
+                class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </div>
+          </div>
+          <div>
+            <label for="photo-file" class="text-sm font-medium">Photo</label>
+            <label
+              for="photo-file"
+              class="mt-1.5 flex w-full cursor-pointer items-center overflow-hidden rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              <span class="shrink-0 pr-3 text-foreground">Browse...</span>
+              <span class="truncate text-muted-foreground">{{ photoFileName }}</span>
+              <input id="photo-file" type="file" accept="image/*" class="sr-only" (change)="onPhotoSelected($event)" />
+            </label>
+          </div>
+          <button
+            type="button"
+            class="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            [disabled]="uploading || !photo || !title || !selectedLead"
+            (click)="handleUpload()"
+          >
+            {{ uploading ? 'Uploading...' : 'Upload' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (uploadedImages.length > 0) {
+    <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+      @for (image of uploadedImages; track image.imageId; let index = $index) {
+        <div class="group cursor-pointer overflow-hidden rounded-2xl border border-border bg-card shadow-card" (click)="openLightbox(index)">
+          <div class="relative flex aspect-[4/3] items-center justify-center bg-muted">
+            @if (imageBlobUrls[image.imageId]) {
+              <img [src]="imageBlobUrls[image.imageId]" [alt]="image.title" class="h-full w-full object-cover" />
+            } @else {
+              <span class="text-sm text-muted-foreground">Loading…</span>
+            }
+            <div class="absolute left-2 top-2 rounded-xl bg-black/70 px-2.5 py-1.5 text-xs text-white">
+              <div class="font-semibold">{{ image.leadName }}</div>
+              <div class="text-white/70">{{ image.uploadedAt | date: 'd MMM' }}</div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between p-3">
+            <div class="truncate text-base font-bold">{{ image.title }}</div>
+            <button type="button" class="text-sm text-destructive" (click)="$event.stopPropagation(); handleDelete(image.imageId)">Delete</button>
+          </div>
+        </div>
+      }
+    </div>
+  } @else if (!loading) {
+    <div class="rounded-2xl border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
+      No photos uploaded yet. Click Upload photos to get started.
+    </div>
+  }
+</div>
+
+@if (lightboxIndex !== null) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/80" (click)="closeLightbox()">
+    <button type="button" class="absolute right-4 top-4 rounded-full bg-black/50 px-3 py-2 text-white" (click)="closeLightbox()">Close</button>
+    <button type="button" class="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 px-3 py-2 text-white" (click)="$event.stopPropagation(); prevImage()">Prev</button>
+    <div class="max-h-[90vh] max-w-[90vw]" (click)="$event.stopPropagation()">
+      @if (imageBlobUrls[uploadedImages[lightboxIndex].imageId]) {
+        <img [src]="imageBlobUrls[uploadedImages[lightboxIndex].imageId]" [alt]="uploadedImages[lightboxIndex].title" class="max-h-[80vh] max-w-[85vw] rounded-xl object-contain" />
+      }
+      <div class="mt-3 text-center text-white">
+        <div class="font-medium">{{ uploadedImages[lightboxIndex].title }}</div>
+        <div class="text-sm text-white/70">{{ uploadedImages[lightboxIndex].leadName }}</div>
+      </div>
+    </div>
+    <button type="button" class="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/50 px-3 py-2 text-white" (click)="$event.stopPropagation(); nextImage()">Next</button>
+  </div>
+}
