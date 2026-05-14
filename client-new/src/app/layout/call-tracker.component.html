@@ -1,0 +1,64 @@
+@if (calls.activeSession(); as session) {
+  <div class="fixed bottom-4 right-4 z-50 w-full max-w-sm rounded-xl border border-gray-700 bg-gray-900 text-gray-100 shadow-2xl">
+    <div class="border-b border-gray-700 px-4 py-3">
+      <p class="text-xs uppercase tracking-wide text-emerald-400">Call in progress</p>
+      <p class="mt-1 text-base font-semibold text-white">{{ session.leadName }}</p>
+      <p class="text-sm text-gray-400">{{ session.phoneNumber }}</p>
+    </div>
+
+    <div class="space-y-3 px-4 py-4">
+      <div class="flex items-center justify-between text-sm">
+        <span class="text-gray-400">Duration</span>
+        <span class="font-mono text-lg text-white">{{ calls.formatElapsed(calls.elapsedSeconds()) }}</span>
+      </div>
+      <p class="text-xs leading-relaxed text-gray-400">
+        Routing through {{ calls.dialerLabel(session.dialer) }}. {{ calls.dialerHint(session.dialer) }}
+      </p>
+
+      <div>
+        <label class="mb-1 block text-xs font-medium text-gray-300">Call Status</label>
+        <select
+          [(ngModel)]="status"
+          class="w-full rounded-lg border border-gray-600 bg-gray-950 px-3 py-2 text-sm text-white"
+        >
+          @for (option of statusOptions; track option) {
+            <option [value]="option">{{ formatStatus(option) }}</option>
+          }
+        </select>
+      </div>
+
+      <div>
+        <label class="mb-1 block text-xs font-medium text-gray-300">Notes</label>
+        <textarea
+          [(ngModel)]="notes"
+          rows="2"
+          placeholder="Optional call notes"
+          class="w-full rounded-lg border border-gray-600 bg-gray-950 px-3 py-2 text-sm text-white placeholder:text-gray-500"
+        ></textarea>
+      </div>
+
+      @if (calls.lastError()) {
+        <p class="text-sm text-red-400">{{ calls.lastError() }}</p>
+      }
+
+      <div class="flex gap-2">
+        <button
+          type="button"
+          (click)="cancelCall()"
+          class="flex-1 rounded-lg border border-gray-600 px-3 py-2 text-sm font-medium text-gray-200 hover:bg-gray-800"
+          [disabled]="calls.logging()"
+        >
+          Dismiss
+        </button>
+        <button
+          type="button"
+          (click)="endCall()"
+          class="flex-1 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+          [disabled]="calls.logging()"
+        >
+          {{ calls.logging() ? 'Saving...' : 'End & Log Call' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
