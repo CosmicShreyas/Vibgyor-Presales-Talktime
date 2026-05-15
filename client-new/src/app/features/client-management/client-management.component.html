@@ -1,0 +1,789 @@
+@if (toast()) {
+  <div
+    class="fixed top-4 right-4 z-50 animate-slide-in"
+  >
+    <div
+      [ngClass]="
+        toast()!.type === 'success'
+          ? 'flex items-center p-4 rounded-lg shadow-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+          : 'flex items-center p-4 rounded-lg shadow-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+      "
+    >
+      @if (toast()!.type === 'success') {
+        <svg class="h-5 w-5 text-green-600 dark:text-green-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      } @else {
+        <svg class="h-5 w-5 text-red-600 dark:text-red-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      }
+      <p
+        [ngClass]="
+          toast()!.type === 'success'
+            ? 'text-sm font-medium text-green-800 dark:text-green-200'
+            : 'text-sm font-medium text-red-800 dark:text-red-200'
+        "
+      >
+        {{ toast()!.message }}
+      </p>
+      <button
+        type="button"
+        (click)="toast.set(null)"
+        [ngClass]="
+          toast()!.type === 'success'
+            ? 'ml-4 text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200'
+            : 'ml-4 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200'
+        "
+      >
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+  </div>
+}
+
+<div class="space-y-6">
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <h2 class="shrink-0 text-2xl font-bold text-gray-900 dark:text-white">
+      {{ user()?.role === 'admin' ? 'All Leads' : 'My Leads' }}
+    </h2>
+    @if (user()?.role === 'admin') {
+      <div class="flex flex-wrap items-center gap-3">
+        @if (selectedIds().length > 0) {
+          <button
+            type="button"
+            (click)="showBulkModal.set(true)"
+            class="inline-flex items-center rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700"
+            title="Assign selected leads"
+          >
+            <svg class="mr-2 h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            Assign ({{ selectedIds().length }})
+          </button>
+        }
+        <button
+          type="button"
+          (click)="showSourceModal.set(true)"
+          class="inline-flex items-center rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-purple-700"
+          title="Manage project sources"
+        >
+          <svg class="mr-2 h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+          </svg>
+          Project Sources
+        </button>
+        <button
+          type="button"
+          (click)="showAutoAssignModal.set(true)"
+          class="inline-flex items-center rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-teal-700"
+          title="Configure auto-assignment"
+        >
+          <svg class="mr-2 h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+          </svg>
+          Auto Assignment
+        </button>
+        <button
+          type="button"
+          (click)="fetchClients()"
+          [disabled]="refreshing()"
+          class="inline-flex items-center rounded-lg bg-gray-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+          title="Refresh leads"
+        >
+          <svg
+            class="mr-2 h-4 w-4 shrink-0"
+            [class.animate-spin]="refreshing()"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            aria-hidden="true"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Refresh
+        </button>
+        <button
+          type="button"
+          (click)="deleteAllOpen.set(true)"
+          class="inline-flex items-center rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700"
+          [title]="selectedIds().length > 0 ? 'Delete selected leads' : 'Delete all leads'"
+        >
+          <svg class="mr-2 h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          {{ selectedIds().length > 0 ? 'Delete (' + selectedIds().length + ')' : 'Delete All' }}
+        </button>
+        <button
+          type="button"
+          (click)="showImportModal.set(true)"
+          class="inline-flex items-center rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-700"
+        >
+          <svg class="mr-2 h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+          </svg>
+          Import CSV
+        </button>
+        <button
+          type="button"
+          (click)="openModal(null)"
+          class="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500"
+        >
+          <svg class="mr-2 h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          Add Lead
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (stagingCount() > 0 && user()?.role === 'admin') {
+    <div class="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+      <div class="flex items-start gap-3">
+        <svg class="h-5 w-5 shrink-0 text-orange-600 dark:text-orange-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <div class="min-w-0 flex-1">
+          <h4 class="text-sm font-medium text-orange-800 dark:text-orange-200 mb-1">Unassigned Leads in Staging Area</h4>
+          <p class="text-sm text-orange-700 dark:text-orange-300 mb-3">
+            {{ stagingCount() }} lead(s) are waiting in the staging area and not visible here. Please process them first before viewing
+            assigned leads.
+          </p>
+          <button type="button" (click)="goUnassigned.emit()" class="px-3 py-1.5 text-sm bg-orange-600 hover:bg-orange-700 text-white rounded-md">
+            Go to Unassigned Leads
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (leadsWithErrors().length > 0) {
+    <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 flex justify-between gap-3 items-start">
+      <div class="flex items-start gap-3 min-w-0">
+        <svg class="h-5 w-5 shrink-0 text-yellow-600 dark:text-yellow-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <div>
+          <h4 class="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-1">Validation Warnings</h4>
+          <p class="text-sm text-yellow-700 dark:text-yellow-300">
+            {{ leadsWithErrors().length }} lead(s) were imported with phone number validation issues. These leads are highlighted below. Use
+            the edit action to fix phone numbers.
+          </p>
+        </div>
+      </div>
+      <button
+        type="button"
+        (click)="clearErrorHighlights()"
+        class="text-yellow-700 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-200 shrink-0 p-1"
+        aria-label="Dismiss warnings"
+      >
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+    </div>
+  }
+
+  <div class="mb-7 flex flex-col gap-4 xl:flex-row xl:items-center">
+    <div class="relative min-w-0 flex-1">
+      <svg
+        class="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        aria-hidden="true"
+      >
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+      <input
+        type="search"
+        placeholder="Search leads by name, phone, email, or company..."
+        class="w-full px-4 py-2 pl-10 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+        [value]="searchQuery()"
+        (input)="searchQuery.set($any($event.target).value); currentPage.set(1)"
+      />
+    </div>
+    @if (user()?.role === 'admin') {
+      <div class="flex justify-end xl:justify-start">
+        <div
+          class="flex shrink-0 items-center overflow-hidden rounded-lg border border-gray-300 shadow-sm dark:border-gray-600"
+          role="group"
+          aria-label="View mode"
+        >
+          <button
+            type="button"
+            (click)="viewMode.set('grouped')"
+            class="flex items-center px-4 py-2 text-sm font-medium transition-colors"
+            title="Grouped view"
+            [ngClass]="
+              viewMode() === 'grouped'
+                ? 'bg-primary-600 text-white'
+                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+            "
+          >
+            <svg class="mr-2 h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+            Grouped
+          </button>
+          <button
+            type="button"
+            (click)="viewMode.set('flat')"
+            class="flex items-center border-l border-gray-300 px-4 py-2 text-sm font-medium transition-colors dark:border-gray-600"
+            title="Flat view"
+            [ngClass]="
+              viewMode() === 'flat'
+                ? 'bg-primary-600 text-white'
+                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+            "
+          >
+            <svg class="mr-2 h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+            Flat
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (user()?.role === 'admin' && viewMode() === 'grouped') {
+    <app-client-grouped-leads
+      [sortedGroupKeys]="hierarchyBundle().sortedGroupKeys"
+      [hierarchicalGroups]="hierarchyBundle().hierarchicalGroups"
+      [expanded]="expanded()"
+      [groupPages]="groupPages()"
+      [user]="user()"
+      [selectedIds]="selectedIds()"
+      [leadErrors]="leadsWithErrors()"
+      [itemsPerPage]="itemsPerPage"
+      (toggleGroup)="toggleExpand($event)"
+      (setGroupPage)="setGroupPage($event.key, $event.page)"
+      (edit)="openModal($event)"
+      (delete)="requestDelete($event)"
+      (deleteSource)="pendingBulkDelete.set($event)"
+      (toggleOne)="toggleSelect($event)"
+      (toggleAllPage)="toggleSelectAllPage($event)"
+    />
+  } @else {
+    <app-leads-table
+      [clients]="paginatedClients()"
+      [serialStart]="startIndex()"
+      [user]="user()"
+      [selectedIds]="selectedIds()"
+      [leadErrors]="leadsWithErrors()"
+      [searchQuery]="searchQuery()"
+      (toggleOne)="toggleSelect($event)"
+      (toggleAllPage)="toggleSelectAllPage($event)"
+      (edit)="openModal($event)"
+      (delete)="requestDelete($event)"
+    />
+    @if (totalPages() > 1) {
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-gray-200 dark:border-gray-700 pt-4 text-sm text-gray-700 dark:text-gray-300">
+        <span>Showing {{ startIndex() + 1 }} to {{ endIndex() }} of {{ filteredClients().length }} leads</span>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            class="p-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            [disabled]="currentPage() === 1"
+            (click)="prevClientPage()"
+            aria-label="Previous page"
+          >
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+          </button>
+          <span class="px-2 font-medium">Page {{ currentPage() }} of {{ totalPages() }}</span>
+          <button
+            type="button"
+            class="p-2 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            [disabled]="currentPage() === totalPages()"
+            (click)="nextClientPage()"
+            aria-label="Next page"
+          >
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+          </button>
+        </div>
+      </div>
+    }
+  }
+</div>
+
+@if (showModal()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/70 p-4">
+    <div class="my-8 max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-white dark:bg-gray-800 shadow-xl">
+      <div class="flex items-start justify-between gap-3 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ editingClient() ? 'Edit Lead' : 'Add Lead' }}</h2>
+        <button
+          type="button"
+          (click)="closeLeadModal()"
+          class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+          aria-label="Close"
+        >
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <form (ngSubmit)="saveLead($event)" class="space-y-4 px-6 py-6">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <label class="mb-1 flex justify-between text-sm font-medium text-gray-700 dark:text-gray-300">
+              <span>Name *</span>
+              <span class="tabular-nums text-gray-500">{{ formData.name.length }}/100</span>
+            </label>
+            <input
+              required
+              [(ngModel)]="formData.name"
+              name="nm"
+              maxlength="100"
+              placeholder="Enter full name"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+          </div>
+          <div>
+            <label class="mb-1 flex justify-between text-sm font-medium text-gray-700 dark:text-gray-300">
+              <span>Phone *</span>
+              <span class="text-gray-500">(10-11 digits)</span>
+            </label>
+            <input
+              required
+              [(ngModel)]="formData.phone"
+              name="ph"
+              maxlength="15"
+              placeholder="e.g., 9876543210"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+          </div>
+          <div>
+            <label class="mb-1 flex justify-between text-sm font-medium text-gray-700 dark:text-gray-300">
+              <span>Alternate Phone</span>
+              <span class="text-gray-500">(10-11 digits)</span>
+            </label>
+            <input
+              [(ngModel)]="formData.alternatePhone"
+              name="aph"
+              maxlength="15"
+              placeholder="e.g., 9876543210"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+          </div>
+          <div>
+            <label class="mb-1 flex justify-between text-xs font-medium text-gray-400">
+              <span>Email</span>
+              <span class="tabular-nums text-gray-500">{{ formData.email.length }}/100</span>
+            </label>
+            <input
+              type="email"
+              [(ngModel)]="formData.email"
+              name="em"
+              maxlength="100"
+              placeholder="email@example.com"
+              class="w-full rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            />
+          </div>
+          <div>
+            <label class="mb-1 flex justify-between text-xs font-medium text-gray-400">
+              <span>Company / Project</span>
+              <span class="tabular-nums text-gray-500">{{ formData.company.length }}/100</span>
+            </label>
+            <input
+              [(ngModel)]="formData.company"
+              name="co"
+              maxlength="100"
+              placeholder="Company or project name"
+              class="w-full rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            />
+          </div>
+          <div>
+            <label class="mb-1 flex justify-between text-xs font-medium text-gray-400">
+              <span>Tags</span>
+              <span class="tabular-nums text-gray-500">{{ formData.tags.length }}/100</span>
+            </label>
+            <input
+              [(ngModel)]="formData.tags"
+              name="tg"
+              maxlength="100"
+              placeholder="e.g., VIP, Hot Lead"
+              class="w-full rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            />
+          </div>
+          <div>
+            <label class="mb-1 flex justify-between text-xs font-medium text-gray-400">
+              <span>Address</span>
+              <span class="tabular-nums text-gray-500">{{ formData.address.length }}/200</span>
+            </label>
+            <input
+              [(ngModel)]="formData.address"
+              name="ad"
+              maxlength="200"
+              placeholder="Street address"
+              class="w-full rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            />
+          </div>
+          <div>
+            <label class="mb-1 flex justify-between text-xs font-medium text-gray-400">
+              <span>City</span>
+              <span class="tabular-nums text-gray-500">{{ formData.city.length }}/50</span>
+            </label>
+            <input
+              [(ngModel)]="formData.city"
+              name="ci"
+              maxlength="50"
+              placeholder="City name"
+              class="w-full rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            />
+          </div>
+          <div>
+            <label class="mb-1 flex justify-between text-xs font-medium text-gray-400">
+              <span>State</span>
+              <span class="tabular-nums text-gray-500">{{ formData.state.length }}/50</span>
+            </label>
+            <input
+              [(ngModel)]="formData.state"
+              name="stt"
+              maxlength="50"
+              placeholder="State name"
+              class="w-full rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-medium text-gray-400">Source</label>
+            <select
+              [(ngModel)]="formData.source"
+              name="src"
+              class="w-full rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="">Select source…</option>
+              @for (s of projectSources(); track s._id) {
+                <option [value]="s.name">{{ s.name }}</option>
+              }
+            </select>
+          </div>
+          <div [ngClass]="{ 'md:col-span-2': user()?.role !== 'admin' }">
+            <label class="mb-1 flex justify-between text-xs font-medium text-gray-400">
+              <span>Budget</span>
+              <span class="tabular-nums text-gray-500">{{ formData.budget.length }}/50</span>
+            </label>
+            <input
+              [(ngModel)]="formData.budget"
+              name="bud"
+              maxlength="50"
+              placeholder="e.g., 50L - 1Cr"
+              class="w-full rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            />
+          </div>
+          @if (user()?.role === 'admin') {
+            <div>
+              <label class="mb-1 block text-xs font-medium text-gray-400">Assign To *</label>
+              <select
+                [(ngModel)]="formData.assignedTo"
+                name="as"
+                class="w-full rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="">Select employee</option>
+                @for (u of users(); track u._id) {
+                  <option [value]="u._id">{{ u.name }} ({{ u.role }})</option>
+                }
+              </select>
+            </div>
+          }
+          <div>
+            <label class="mb-1 block text-xs font-medium text-gray-400">Lead Status</label>
+            <select
+              [(ngModel)]="formData.status"
+              name="st"
+              class="w-full rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="pending">Pending</option>
+              <option value="no-response">No response</option>
+              <option value="qualified">Qualified</option>
+              <option value="follow-up">Follow up</option>
+              <option value="not-interested">Not interested</option>
+              <option value="already-finalised">Already finalised</option>
+            </select>
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-medium text-gray-400">Priority</label>
+            <select
+              [(ngModel)]="formData.priority"
+              name="pr"
+              class="w-full rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+          <div class="md:col-span-2">
+            <label class="mb-1 flex justify-between text-xs font-medium text-gray-400">
+              <span>Description</span>
+              <span class="tabular-nums text-gray-500">{{ formData.description.length }}/500</span>
+            </label>
+            <textarea
+              [(ngModel)]="formData.description"
+              name="desc"
+              rows="2"
+              maxlength="500"
+              placeholder="Project or lead description…"
+              class="w-full rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            ></textarea>
+          </div>
+          <div class="md:col-span-2">
+            <label class="mb-1 flex justify-between text-xs font-medium text-gray-400">
+              <span>Remarks</span>
+              <span class="tabular-nums text-gray-500">{{ formData.notes.length }}/500</span>
+            </label>
+            <textarea
+              [(ngModel)]="formData.notes"
+              name="no"
+              rows="4"
+              maxlength="500"
+              placeholder="Additional remarks about the lead…"
+              class="w-full rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            ></textarea>
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 border-t border-gray-700 pt-4">
+          <button
+            type="button"
+            (click)="closeLeadModal()"
+            class="rounded-lg border border-gray-500 bg-transparent px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            [disabled]="loading()"
+            class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {{ loading() ? 'Saving…' : editingClient() ? 'Save' : 'Create' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+@if (showBulkModal()) {
+  <div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+      <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Bulk assign {{ selectedIds().length }} lead(s)</h3>
+      <select
+        class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white mb-4"
+        [ngModel]="bulkAssignTo()"
+        (ngModelChange)="bulkAssignTo.set($event)"
+        [ngModelOptions]="{ standalone: true }"
+      >
+        <option value="">Select employee…</option>
+        @for (u of users(); track u._id) {
+          <option [value]="u._id">{{ u.name }}</option>
+        }
+      </select>
+      <div class="flex justify-end gap-2">
+        <button type="button" (click)="showBulkModal.set(false)" class="px-4 py-2 border rounded">Cancel</button>
+        <button type="button" (click)="bulkAssign()" [disabled]="bulkAssigning()" class="px-4 py-2 bg-purple-600 text-white rounded">{{ bulkAssigning() ? '…' : 'Assign' }}</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showSourceModal()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/70 p-4">
+    <div
+      class="my-8 flex w-full max-w-xl max-h-[90vh] flex-col overflow-hidden rounded-xl border border-gray-700 bg-gray-800 text-gray-100 shadow-xl"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="manage-sources-title"
+    >
+      <div class="flex items-start justify-between gap-3 border-b border-gray-700 px-5 py-4">
+        <h2 id="manage-sources-title" class="text-lg font-semibold text-white">Manage Project Sources</h2>
+        <button
+          type="button"
+          (click)="closeSourceModal()"
+          class="rounded-lg p-1 text-gray-400 hover:bg-gray-700 hover:text-white"
+          aria-label="Close"
+        >
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto px-5 py-5">
+        <form (ngSubmit)="saveSource($event)" class="space-y-4">
+          <div class="rounded-lg border border-gray-700 bg-gray-900/50 p-4">
+            <p class="mb-3 text-sm font-medium text-gray-400">Add New Source</p>
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label for="src-name" class="mb-1 block text-xs font-medium text-gray-400">Source Name *</label>
+                <input
+                  id="src-name"
+                  [(ngModel)]="sourceForm.name"
+                  name="sn"
+                  required
+                  placeholder="e.g., Website, Referral"
+                  class="w-full rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label for="src-desc" class="mb-1 block text-xs font-medium text-gray-400">Description</label>
+                <input
+                  id="src-desc"
+                  [(ngModel)]="sourceForm.description"
+                  name="sd"
+                  placeholder="Optional description"
+                  class="w-full rounded-lg border border-gray-600 bg-gray-900 px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
+            <div class="mt-4 flex flex-wrap justify-end gap-2">
+              @if (editingSource()) {
+                <button
+                  type="button"
+                  (click)="cancelSource()"
+                  class="rounded-lg border border-gray-600 px-4 py-2 text-sm font-medium text-gray-200 hover:bg-gray-700"
+                >
+                  Cancel edit
+                </button>
+              }
+              <button
+                type="submit"
+                [disabled]="savingSource() || !sourceForm.name.trim()"
+                class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {{ savingSource() ? 'Saving…' : editingSource() ? 'Update Source' : 'Add Source' }}
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <div class="mt-6">
+          <p class="mb-3 text-sm font-medium text-gray-400">Existing Sources ({{ projectSources().length }})</p>
+          <div class="space-y-2">
+            @for (s of projectSources(); track s._id) {
+              <div
+                class="flex items-start justify-between gap-3 rounded-lg border border-gray-700 bg-gray-900/40 px-3 py-3"
+              >
+                <div class="min-w-0 flex-1">
+                  <div class="font-medium text-white">{{ s.name }}</div>
+                  @if (s.description) {
+                    <p class="mt-0.5 text-sm text-gray-400">{{ s.description }}</p>
+                  }
+                </div>
+                <div class="flex shrink-0 items-center gap-1">
+                  <button
+                    type="button"
+                    (click)="editSource(s)"
+                    class="rounded-lg p-2 text-sky-400 hover:bg-gray-800"
+                    aria-label="Edit source"
+                    title="Edit"
+                  >
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    (click)="requestDeleteSource(s)"
+                    class="rounded-lg p-2 text-rose-400 hover:bg-gray-800"
+                    aria-label="Delete source"
+                    title="Delete"
+                  >
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            } @empty {
+              <p class="rounded-lg border border-dashed border-gray-600 py-8 text-center text-sm text-gray-500">No sources yet</p>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end border-t border-gray-700 px-5 py-4">
+        <button
+          type="button"
+          (click)="closeSourceModal()"
+          class="rounded-lg border border-gray-500 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<app-auto-assignment-modal
+  [isOpen]="showAutoAssignModal()"
+  [users]="users()"
+  [projectSources]="projectSources()"
+  (closed)="showAutoAssignModal.set(false)"
+  (processed)="onAutoAssignmentProcessed()"
+/>
+
+<app-csv-import-modal
+  [isOpen]="showImportModal()"
+  [users]="users()"
+  (closed)="showImportModal.set(false)"
+  (imported)="handleCsvImport($event)"
+/>
+
+<app-confirm-dialog
+  [isOpen]="deleteConfirm().isOpen"
+  (onClose)="deleteConfirm.set({ isOpen: false, id: null, name: '' })"
+  (onConfirm)="confirmDelete()"
+  title="Delete lead"
+  [message]="'Delete ' + deleteConfirm().name + '?'"
+  confirmText="Delete"
+  variant="danger"
+/>
+
+<app-confirm-dialog
+  [isOpen]="deleteAllOpen()"
+  (onClose)="deleteAllOpen.set(false)"
+  (onConfirm)="confirmDeleteAll()"
+  title="Confirm delete"
+  [message]="
+    selectedIds().length > 0
+      ? 'Delete ' + selectedIds().length + ' selected lead(s)?'
+      : 'Delete ALL leads? This cannot be undone.'
+  "
+  confirmText="Delete"
+  variant="danger"
+/>
+
+<app-confirm-dialog
+  [isOpen]="pendingBulkDelete() !== null"
+  (onClose)="pendingBulkDelete.set(null)"
+  (onConfirm)="confirmDeleteSourceLeads()"
+  title="Delete leads in group"
+  [message]="
+    pendingBulkDelete()
+      ? 'Delete all ' + pendingBulkDelete()!.leads.length + ' lead(s) from ' + pendingBulkDelete()!.label + '?'
+      : ''
+  "
+  confirmText="Delete all"
+  variant="danger"
+/>
+
+<app-confirm-dialog
+  [isOpen]="deleteSourceConfirm().isOpen"
+  (onClose)="deleteSourceConfirm.set({ isOpen: false, id: null, name: '' })"
+  (onConfirm)="confirmDeleteProjectSource()"
+  title="Delete project source"
+  [message]="'Delete source ' + deleteSourceConfirm().name + '?'"
+  confirmText="Delete"
+  variant="danger"
+/>
