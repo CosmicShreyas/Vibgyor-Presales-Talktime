@@ -1,0 +1,442 @@
+@if (toast()) {
+  <div class="fixed right-4 top-4 z-50 animate-slide-in">
+    <div
+      [ngClass]="
+        toast()!.type === 'success'
+          ? 'flex items-center rounded-lg border border-green-200 bg-green-50 p-4 shadow-lg dark:border-green-800 dark:bg-green-900/20'
+          : 'flex items-center rounded-lg border border-red-200 bg-red-50 p-4 shadow-lg dark:border-red-800 dark:bg-red-900/20'
+      "
+    >
+      @if (toast()!.type === 'success') {
+        <svg class="mr-3 h-5 w-5 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      } @else {
+        <svg class="mr-3 h-5 w-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      }
+      <p
+        [ngClass]="
+          toast()!.type === 'success'
+            ? 'text-sm font-medium text-green-800 dark:text-green-200'
+            : 'text-sm font-medium text-red-800 dark:text-red-200'
+        "
+      >
+        {{ toast()!.message }}
+      </p>
+    </div>
+  </div>
+}
+
+@if (loading()) {
+  <div class="flex h-64 items-center justify-center text-gray-600 dark:text-gray-400">Loading unassigned leads...</div>
+} @else if (error()) {
+  <div class="flex h-64 items-center justify-center text-red-600 dark:text-red-400">Error: {{ error() }}</div>
+} @else {
+  <div class="space-y-6">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Unassigned Leads ({{ leads().length }})</h2>
+      <div class="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          (click)="refresh()"
+          [disabled]="refreshing()"
+          class="flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+          title="Refresh leads"
+        >
+          <svg class="mr-2 h-4 w-4" [class.animate-spin]="refreshing()" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Refresh
+        </button>
+
+        <div class="inline-flex overflow-hidden rounded-lg border border-gray-300 shadow-sm dark:border-gray-600" role="group" aria-label="View mode">
+          <button
+            type="button"
+            (click)="viewMode.set('grouped')"
+            class="flex items-center px-4 py-2 text-sm font-medium transition-colors"
+            [ngClass]="
+              viewMode() === 'grouped'
+                ? 'z-10 bg-primary-600 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+            "
+            title="Grouped view"
+          >
+            <svg class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+            Grouped
+          </button>
+          <button
+            type="button"
+            (click)="viewMode.set('flat'); currentPage.set(1)"
+            class="flex items-center border-l border-gray-300 px-4 py-2 text-sm font-medium transition-colors dark:border-gray-600"
+            [ngClass]="
+              viewMode() === 'flat'
+                ? 'z-10 bg-primary-600 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+            "
+            title="Flat view"
+          >
+            <svg class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+            Flat
+          </button>
+        </div>
+      </div>
+    </div>
+
+    @if (leads().length > 0) {
+      <div class="rounded-r-lg border-l-4 border-amber-500 bg-amber-50 p-4 dark:bg-amber-900/20">
+        <div class="flex items-start gap-3">
+          <svg class="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <div class="min-w-0 flex-1">
+            <h3 class="mb-1 text-sm font-semibold text-amber-800 dark:text-amber-200">
+              Action Required: {{ leads().length }} Unassigned Lead{{ leads().length !== 1 ? 's' : '' }}
+            </h3>
+            <p class="mb-3 text-sm text-amber-700 dark:text-amber-300">
+              You have {{ leads().length }} lead{{ leads().length !== 1 ? 's' : '' }} that need to be assigned to employees. Click
+              "Assign Leads" to open the auto-assignment menu and distribute these leads to your team. Once assigned, these leads will
+              appear on the main Leads page and this section will be cleared.
+            </p>
+            <button
+              type="button"
+              (click)="showAutoModal.set(true)"
+              class="inline-flex items-center rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white transition-colors duration-200 hover:bg-amber-700"
+            >
+              <svg class="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+              </svg>
+              Assign Leads
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (viewMode() === 'grouped') {
+      @if (sortedKeys().length > 0) {
+        <div class="space-y-4">
+          @for (groupKey of sortedKeys(); track groupKey) {
+            @let g = groups()[groupKey];
+            @if (isParent(g)) {
+              @let subKeys = objectKeys(g.subCategories);
+              @let isBp = groupKey === 'brand-partners';
+              <div
+                class="overflow-hidden rounded-lg border-2 bg-white shadow-md dark:bg-gray-800"
+                [class.border-purple-300]="isBp"
+                [class.dark:border-purple-700]="isBp"
+                [class.border-blue-300]="!isBp"
+                [class.dark:border-blue-700]="!isBp"
+              >
+                <button
+                  type="button"
+                  (click)="toggle(groupKey)"
+                  class="w-full bg-gradient-to-r p-5 text-left transition-all duration-200"
+                  [ngClass]="
+                    isBp
+                      ? 'from-purple-50 to-violet-50 hover:from-purple-100 hover:to-violet-100 dark:from-purple-900/30 dark:to-violet-900/30 dark:hover:from-purple-900/40 dark:hover:to-violet-900/40'
+                      : 'from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 dark:hover:from-blue-900/40 dark:hover:to-indigo-900/40'
+                  "
+                >
+                  <div class="flex items-center justify-between gap-3">
+                    <div class="flex min-w-0 items-center gap-3">
+                      <svg class="h-5 w-5 shrink-0 text-gray-500 transition-transform duration-200 dark:text-gray-400" [class.rotate-90]="isExpanded(groupKey)" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                      </svg>
+                      @if (isBp) {
+                        <svg class="h-5 w-5 shrink-0 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                      } @else {
+                        <svg class="h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m-16 0v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7" />
+                        </svg>
+                      }
+                      <div class="min-w-0 text-left">
+                        <h3 class="truncate text-base font-bold" [class.text-purple-900]="isBp" [class.dark:text-purple-100]="isBp" [class.text-blue-900]="!isBp" [class.dark:text-blue-100]="!isBp">{{ g.name }}</h3>
+                        <p class="ml-7 mt-1 text-xs" [class.text-purple-700]="isBp" [class.dark:text-purple-300]="isBp" [class.text-blue-700]="!isBp" [class.dark:text-blue-300]="!isBp">
+                          {{ subKeys.length }}
+                          @if (isBp) {
+                            {{ subKeys.length !== 1 ? 'partners' : 'partner' }}
+                          } @else {
+                            {{ subKeys.length !== 1 ? 'categories' : 'category' }}
+                          }
+                          - {{ parentTotalLeads(g) }} total lead{{ parentTotalLeads(g) !== 1 ? 's' : '' }}
+                        </p>
+                      </div>
+                    </div>
+                    <span
+                      class="shrink-0 rounded-md px-3 py-1 text-sm font-semibold"
+                      [ngClass]="
+                        isBp
+                          ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'
+                          : 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
+                      "
+                    >
+                      {{ parentTotalLeads(g) }}
+                    </span>
+                  </div>
+                </button>
+
+                @if (isExpanded(groupKey)) {
+                  <div class="space-y-3 p-4" [ngClass]="isBp ? 'bg-purple-50/50 dark:bg-purple-900/10' : 'bg-blue-50/50 dark:bg-blue-900/10'">
+                    @for (subKey of subKeys; track subKey) {
+                      @let sub = g.subCategories[subKey];
+                      <div
+                        class="overflow-hidden rounded-lg border-2 bg-white shadow-sm dark:bg-gray-800"
+                        [class.border-purple-300]="isBp"
+                        [class.dark:border-purple-700]="isBp"
+                        [class.border-green-300]="!isBp"
+                        [class.dark:border-green-700]="!isBp"
+                      >
+                        <button
+                          type="button"
+                          (click)="toggle(subKey)"
+                          class="w-full bg-gradient-to-r p-4 text-left transition-all duration-200"
+                          [ngClass]="
+                            isBp
+                              ? 'from-purple-50 to-violet-50 hover:from-purple-100 hover:to-violet-100 dark:from-purple-900/30 dark:to-violet-900/30 dark:hover:from-purple-900/40 dark:hover:to-violet-900/40'
+                              : 'from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 dark:hover:from-green-900/40 dark:hover:to-emerald-900/40'
+                          "
+                        >
+                          <div class="flex items-center justify-between gap-3">
+                            <div class="flex min-w-0 items-center gap-3">
+                              <svg class="h-5 w-5 shrink-0 text-gray-500 transition-transform duration-200 dark:text-gray-400" [class.rotate-90]="isExpanded(subKey)" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                              </svg>
+                              <div class="min-w-0">
+                                <h4 class="truncate text-sm font-bold" [class.text-purple-900]="isBp" [class.dark:text-purple-100]="isBp" [class.text-green-900]="!isBp" [class.dark:text-green-100]="!isBp">{{ sub.name }}</h4>
+                                <p class="mt-0.5 text-xs" [class.text-purple-700]="isBp" [class.dark:text-purple-300]="isBp" [class.text-green-700]="!isBp" [class.dark:text-green-300]="!isBp">
+                                  {{ subCategoryTotal(sub) }} lead{{ subCategoryTotal(sub) !== 1 ? 's' : '' }}
+                                </p>
+                              </div>
+                            </div>
+                            <span
+                              class="rounded-md px-2.5 py-1 text-sm font-semibold"
+                              [ngClass]="
+                                isBp
+                                  ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'
+                                  : 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'
+                              "
+                            >
+                              {{ subCategoryTotal(sub) }}
+                            </span>
+                          </div>
+                        </button>
+
+                        @if (isExpanded(subKey)) {
+                          <div class="space-y-4 bg-gray-50 p-3 dark:bg-gray-900/30">
+                            @for (childKey of objectKeys(sub.children); track childKey) {
+                              @let groupLeads = sub.children[childKey];
+                              @let pg = paginate(groupLeads, childKey);
+                              <div
+                                class="overflow-hidden rounded-lg bg-white dark:bg-gray-800"
+                                [ngClass]="
+                                  isBp
+                                    ? 'border border-gray-300 dark:border-gray-600'
+                                    : 'border-2 border-green-300 dark:border-green-700'
+                                "
+                              >
+                                <button
+                                  type="button"
+                                  (click)="toggle(childKey)"
+                                  class="w-full bg-gradient-to-r p-3 text-left transition-all duration-200"
+                                  [ngClass]="
+                                    isBp
+                                      ? 'from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 dark:from-gray-700 dark:to-gray-800 dark:hover:from-gray-600 dark:hover:to-gray-700'
+                                      : 'from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 dark:hover:from-green-900/40 dark:hover:to-emerald-900/40'
+                                  "
+                                >
+                                  <div class="flex items-center justify-between gap-3">
+                                    <div class="flex min-w-0 items-center gap-2">
+                                      <svg class="h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200 dark:text-gray-400" [class.rotate-90]="isExpanded(childKey)" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                      </svg>
+                                      <div class="min-w-0">
+                                        <div class="truncate text-xs font-semibold text-gray-900 dark:text-white">{{ info(childKey).type }}: {{ info(childKey).name }}</div>
+                                        <p class="text-xs text-gray-600 dark:text-gray-300">{{ groupLeads.length }} lead{{ groupLeads.length !== 1 ? 's' : '' }}</p>
+                                      </div>
+                                    </div>
+                                    <span
+                                      class="rounded-md px-2 py-0.5 text-xs font-semibold"
+                                      [ngClass]="
+                                        isBp
+                                          ? 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                                          : 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200'
+                                      "
+                                    >
+                                      {{ groupLeads.length }}
+                                    </span>
+                                  </div>
+                                </button>
+
+                                @if (isExpanded(childKey)) {
+                                  <div class="border-t border-gray-200 dark:border-gray-700">
+                                    <app-unassigned-leads-table [leads]="pg.rows" [startIndex]="pg.start" (deleteLead)="requestDelete($event)" />
+                                    @if (pg.totalPages > 1) {
+                                      <div class="flex items-center justify-between border-t border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
+                                        <div class="text-sm text-gray-700 dark:text-gray-300">
+                                          Showing {{ pg.start + 1 }} to {{ (pg.start + itemsPerPage) < groupLeads.length ? (pg.start + itemsPerPage) : groupLeads.length }} of {{ groupLeads.length }} leads
+                                        </div>
+                                        <div class="flex space-x-2">
+                                          <button type="button" class="rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700" [disabled]="pg.page === 1" (click)="setGroupPage(childKey, pg.page - 1)">
+                                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                                          </button>
+                                          <span class="px-4 py-1 text-sm font-medium text-gray-700 dark:text-gray-300">Page {{ pg.page }} of {{ pg.totalPages }}</span>
+                                          <button type="button" class="rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700" [disabled]="pg.page === pg.totalPages" (click)="setGroupPage(childKey, pg.page + 1)">
+                                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                                          </button>
+                                        </div>
+                                      </div>
+                                    }
+                                  </div>
+                                }
+                              </div>
+                            }
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            } @else {
+              @let groupLeads = g.leads;
+              @let pg = paginate(groupLeads, groupKey);
+              @let vis = rowVisual(groupKey);
+              <div [ngClass]="vis.shell">
+                <button type="button" (click)="toggle(groupKey)" [ngClass]="vis.header">
+                  <div class="flex min-w-0 items-center gap-3">
+                    <svg class="h-4 w-4 shrink-0 text-gray-500 transition-transform duration-200 dark:text-gray-400" [class.rotate-90]="isExpanded(groupKey)" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                    @switch (vis.icon) {
+                      @case ('manual') {
+                        <svg class="h-5 w-5 shrink-0" [ngClass]="vis.iconTint" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      }
+                      @case ('mapping') {
+                        <svg class="h-5 w-5 shrink-0" [ngClass]="vis.iconTint" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      }
+                      @case ('facebook') {
+                        <svg class="h-5 w-5 shrink-0" [ngClass]="vis.iconTint" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                        </svg>
+                      }
+                      @case ('instagram') {
+                        <svg class="h-5 w-5 shrink-0" [ngClass]="vis.iconTint" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      }
+                      @case ('csv') {
+                        <svg class="h-5 w-5 shrink-0" [ngClass]="vis.iconTint" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      }
+                      @default {
+                        <svg class="h-5 w-5 shrink-0" [ngClass]="vis.iconTint" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                        </svg>
+                      }
+                    }
+                    <div class="min-w-0 text-left">
+                      <span class="block truncate font-semibold text-gray-900 dark:text-white">{{ info(groupKey).type }}: {{ info(groupKey).name }}</span>
+                      <p class="mt-0.5 text-xs text-gray-600 dark:text-gray-400">{{ groupLeads.length }} lead{{ groupLeads.length !== 1 ? 's' : '' }}</p>
+                    </div>
+                  </div>
+                  <span [ngClass]="vis.badge">{{ groupLeads.length }}</span>
+                </button>
+                @if (isExpanded(groupKey)) {
+                  <div class="border-t border-gray-200 dark:border-gray-700">
+                    <app-unassigned-leads-table [leads]="pg.rows" [startIndex]="pg.start" (deleteLead)="requestDelete($event)" />
+                    @if (pg.totalPages > 1) {
+                      <div class="flex items-center justify-between border-t border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
+                        <div class="text-sm text-gray-700 dark:text-gray-300">
+                          Showing {{ pg.start + 1 }} to {{ (pg.start + itemsPerPage) < groupLeads.length ? (pg.start + itemsPerPage) : groupLeads.length }} of {{ groupLeads.length }} leads
+                        </div>
+                        <div class="flex space-x-2">
+                          <button type="button" class="rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700" [disabled]="pg.page===1" (click)="setGroupPage(groupKey, pg.page-1)">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                          </button>
+                          <span class="px-4 py-1 text-sm font-medium text-gray-700 dark:text-gray-300">Page {{ pg.page }} of {{ pg.totalPages }}</span>
+                          <button type="button" class="rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700" [disabled]="pg.page===pg.totalPages" (click)="setGroupPage(groupKey, pg.page+1)">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                          </button>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+      } @else {
+        <div class="rounded-lg border border-gray-200 bg-white p-12 text-center dark:border-gray-700 dark:bg-gray-800">
+          <svg class="mx-auto mb-4 h-16 w-16 text-green-500 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h3 class="mb-2 text-xl font-semibold text-gray-900 dark:text-white">All Leads Assigned!</h3>
+          <p class="text-gray-600 dark:text-gray-400">There are no unassigned leads at the moment. All leads have been processed and assigned to employees.</p>
+        </div>
+      }
+    } @else {
+      <div class="rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+        @if (leads().length > 0) {
+          <app-unassigned-leads-table [leads]="flatSlice()" [startIndex]="(currentPage() - 1) * itemsPerPage" (deleteLead)="requestDelete($event)" />
+          @if (flatTotalPages() > 1) {
+            <div class="flex items-center justify-between border-t border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
+              <div class="text-sm text-gray-700 dark:text-gray-300">
+                Showing {{ ((currentPage() - 1) * itemsPerPage) + 1 }} to {{ (currentPage() * itemsPerPage) < leads().length ? (currentPage() * itemsPerPage) : leads().length }} of {{ leads().length }} leads
+              </div>
+              <div class="flex space-x-2">
+                <button type="button" class="rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700" [disabled]="currentPage() === 1" (click)="prevFlatPage()">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                </button>
+                <span class="px-4 py-1 text-sm font-medium text-gray-700 dark:text-gray-300">Page {{ currentPage() }} of {{ flatTotalPages() }}</span>
+                <button type="button" class="rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700" [disabled]="currentPage() === flatTotalPages()" (click)="nextFlatPage()">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                </button>
+              </div>
+            </div>
+          }
+        } @else {
+          <div class="p-12 text-center">
+            <svg class="mx-auto mb-4 h-16 w-16 text-green-500 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 class="mb-2 text-xl font-semibold text-gray-900 dark:text-white">All Leads Assigned!</h3>
+            <p class="text-gray-600 dark:text-gray-400">There are no unassigned leads at the moment. All leads have been processed and assigned to employees.</p>
+          </div>
+        }
+      </div>
+    }
+  </div>
+}
+
+<app-auto-assignment-modal
+  [isOpen]="showAutoModal()"
+  [users]="users()"
+  [projectSources]="projectSources()"
+  (closed)="showAutoModal.set(false)"
+  (processed)="onAutoProcessed()"
+/>
+
+<app-confirm-dialog
+  [isOpen]="deleteConfirm().isOpen"
+  (onClose)="deleteConfirm.set({ isOpen: false, id: null })"
+  (onConfirm)="confirmDelete()"
+  title="Delete lead"
+  message="Delete this lead permanently?"
+  confirmText="Delete"
+  variant="danger"
+/>
